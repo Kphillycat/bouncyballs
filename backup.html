@@ -1,0 +1,111 @@
+<head></head>
+
+<body>
+
+<style type="text/css">
+  canvas { border: 1px solid black; }
+</style>
+
+<canvas id="canvas1" width="800" height="400"></canvas>
+
+<script type="text/javascript">
+  function getContext(name) {
+    var canvas = document.getElementById(name);
+    return canvas.getContext("2d");
+  };
+
+  function clearCanvases() {
+    var canvases = document.getElementsByTagName("canvas");
+    for(var i = 0; i < canvases.length; i++) {
+      var canvas = canvases[i];
+      canvas.width = canvas.width;
+    }
+  };
+
+  function Circle(ctx, x, y, vx, vy, r) {
+    this.ctx = ctx;
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.r = r;
+    this.draw = function() {
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, 6.28);
+      ctx.fill();
+    };
+    this.update = function() {
+      this.x += this.vx;
+      this.y += this.vy;
+    }
+  };
+
+  function Scene(canvas, objects) {
+    this.canvas = canvas;
+    this.objects = objects || [];
+    this.ctx = canvas.getContext("2d");
+    this.collideWithBoundary = function(object) {
+      if(object.y + object.r > this.canvas.height || object.y - object.r < 0) { object.vy = -object.vy; }
+      if(object.x + object.r > this.canvas.width || object.x - object.r < 0) { object.vx = -object.vx; }
+    };
+    this.collideWithObjects = function(object, i) {
+      for(var j = 0; j < this.objects.length; j++) {
+        if(i == j) { continue; }
+        var otherObject = this.objects[j];
+        var dist_squared      = (object.y - otherObject.y) * (object.y - otherObject.y) + (object.x - otherObject.x) * (object.x - otherObject.x);
+        var threshold_squared = (object.r + otherObject.r) * (object.r + otherObject.r);
+        if( threshold_squared > dist_squared ) { 
+          var temp_vx = object.vx;
+          var temp_vy = object.vy;
+          object.vx = otherObject.vx;
+          object.vy = otherObject.vy;
+          otherObject.vx = temp_vx;
+          otherObject.vy = temp_vy;
+          object.update();
+          otherObject.update();
+        } 
+      }
+    };
+    this.update = function() {
+      for(var i = 0; i < this.objects.length; i++) {
+        this.objects[i].update();
+        this.collideWithBoundary(this.objects[i]);
+        this.collideWithObjects(this.objects[i], i);
+      }
+    };
+    this.render = function() {
+      for(var i = 0; i < this.objects.length; i++) {
+        this.objects[i].draw();
+      }
+    };
+  };
+
+  var ctx = getContext("canvas1");
+  var canvas = document.getElementById("canvas1");
+  var scene  = new Scene(canvas, []);
+  var numObjects = 50;
+  for(var i = 0; i < numObjects; i++) {
+    var width = canvas.width;
+    var height = canvas.height;
+    var r_max = 10;
+    var r_min = 5;
+    var v_max = 5;
+    var circle = new Circle(ctx, 
+                            Math.random() * (width - 2 * r_max) + r_max, 
+                            Math.random() * (height - 2 * r_max) + r_max, 
+                            Math.random() * v_max - (v_max / 2), 
+                            Math.random() * v_max - (v_max / 2), 
+                            Math.random() * (r_max - r_min) + r_min);
+    scene.objects.push(circle);
+  }
+
+  function drawScene() {
+    clearCanvases();
+    scene.update();
+    scene.render();
+  };
+
+  window.setInterval(drawScene, 17);
+</script>
+</body>
